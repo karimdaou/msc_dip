@@ -7,30 +7,45 @@
 
 #define H 10.   //характерный размер квантовой системы
 //(пространственная бесконечность)
-#define a 3.    //расстояние, на которое развели ядра
-#define L (0.)  // lambda parameter
+
+//#define a 3.    //расстояние, на которое развели ядра
+//#define L 0.   // lambda parameter
 
 #define NUM 100
 #define NUM2 (2*NUM)
 
-#define step1 (H / (NUM + ((NUM-2) * (NUM - 1) * step_x) / 2.))  // расстояние от нуля до первой точки
+//шаги в левую и правую сторону от ядра по оси x соответственно
+#define step1_x_left ((a / 2.) / (i0_x + ((i0_x-2) * (i0_x- 1) * step_x_left) / 2.))
+#define step1_x_right ((H - a/2.) / (((NUM - i0_x) - 0.5) + ( ((NUM - i0_x)-2) * step_x_right)* ((NUM - i0_x) - 1) / 2.))
+
+#define step1_y (H / ((NUM - 0.5) + ((NUM-2) * (NUM - 1) * step_y) / 2.))  // расстояние от нуля до первой точки
 //(использована формула суммы арифметической прогрессии) (сумма слагаемых дает H)
 #define c 0.699 //коэффициент определяющий размер до ближайшей к атому точку вдоль оси z
 
-#define z0 5.   ///на сколько поднимаем плоскость (относительно её начального положения z = -a)
+//#define z0 5.   ///на сколько поднимаем плоскость (относительно её начального положения z = -a)
 //физическое расстояние между атомами и плоскостью = (a-z0)
+
+#define i0_x ((int)((a / 2.) * (NUM - 1.) / H))   //индекс x узла, в котором находится ядро
 #define M ((int)(z0 / step_z))    //индекс, начиная с которого заполняется массив точек z
 
 #define H_var   4.  //чем больше параметр(переменного шага),
 // тем меньше будут первые шаги вдоль соответстующей оси
 // (график будет сильнее прогибаться)
-#define step_x (H_var/(NUM - 2))
-#define step_z (H/(NUM-1+c))    ////////CHECK DENUMENATOR m.b. NUM-2?????\
+
+#define step_x_left (H_var / (i0_x - 2))
+#define step_x_right (H_var / ((NUM - i0_x) - 2))
+#define step_y (H_var/(NUM - 2))
+#define step_z (H/(NUM-1+c))
 
 #define G 0.995
 #define dt 2.e-1
 
 //##### GLOBAL VARIABLES    #####
+double a;    //расстояние, на которое развели ядра
+double L;   // lambda parameter
+double z0;   ///на сколько поднимаем плоскость (относительно её начального положения z = -a)
+//физическое расстояние между атомами и плоскостью = (a-z0)
+
 double x[NUM], y[NUM],
 /*NUM, т.к. задача симметрична относительно начала координат относительно x и y*/
         z[NUM2], dx[NUM], dy[NUM], dz[NUM2], psi[NUM][NUM][NUM2], vel[NUM][NUM][NUM2], V[NUM][NUM][NUM2];
@@ -43,7 +58,7 @@ void prepare_functions() {
     for (i = 0; i < NUM; i++) {
         for (j = 0; j < NUM; j++) {
             for (k = M; k < NUM2; k++) {
-                V[i][j][k] = 1. / (sqrt((x[i] + a / 2.) * (x[i] + a / 2.) + y[j] * y[j] + z[k] * z[k])) + \
+                V[i][j][k] = - 1. / (sqrt((x[i] + a / 2.) * (x[i] + a / 2.) + y[j] * y[j] + z[k] * z[k])) - \
                                 1. / (sqrt((x[i] - a / 2.) * (x[i] - a / 2.) + y[j] * y[j] + z[k] * z[k]));
 
                 psi[i][j][k] = exp(-sqrt(x[i] * x[i] + y[j] * y[j] + z[k] * z[k]));
@@ -409,99 +424,132 @@ void normalize_to_1() {
 }
 
 int main() {
-    int i, j, k, count_steps;
+    int i, j, k, count_steps, count_prints;
     time_t sec;
     double F, v;
 
-    time_t tstart = time(NULL);
+    FILE *f;
+    f = fopen(OUTFILE, "w");
+    fprintf(f, "L\t z0\t a\t	E		\tE_kinetic	\tE_potential	\tmax_grad_E\t\n");
 
-    //переменный шаг по x и y
-    x[0] = y[0] = step1;
-    for (i = 1; i < NUM; i++) {
-        x[i] = y[i] = x[i - 1] + step1 * (1 + (i - 1) * step_x);
-    }
+    //Инициализация параметров задачи и тело программы
+    L = 0.;
+    z0 = 10.;
+    while (z0 > step_z){
+        a = 10.;
+        while (a >= 0.){
 
-    //постоянный шаг по z
-    z[NUM2 / 2] = c * step_z;
-    for (j = NUM2 / 2 + 1; j < NUM2; j++) {
-        z[j] = z[j - 1] + step_z;
-    }
-
-    z[NUM2 / 2 - 1] = -c * step_z;
-    for (k = NUM2 / 2 - 2; k >= M; k--) {
-        z[k] = z[k + 1] - step_z;
-    }
-////////////////////////////////////////////////////////////
-
-    //printf("%lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], x[NUM - 1], z[M], z[NUM2 / 2], z[NUM2 - 1]);
-
-    prepare_functions();
-
-    count_steps = 0;
-
-    calculate_E();
-    calculate_grad_E();
-
-    printf("E			\t E_kinetic		\t E_potential		\t max_grad_E		\t\n");
-    printf("%.14lf\t	%.14lf\t	%.14lf\t	%.14le\t\n", E, E_kinetic, E_potential, max_grad_E);
-
-    max_grad_E = grad_E[0][0][M];
-    for (i = 0; i < NUM; i++) {
-        for (j = 0; j < NUM; j++) {
-            for (k = M; k < NUM2; k++) {
-                if (max_grad_E < fabs(grad_E[i][j][k]))
-                    max_grad_E = fabs(grad_E[i][j][k]);
+            time_t tstart = time(NULL);
+            //переменный шаг по x
+            x[i0_x ] = a / 2. + step1_x_right / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+            for (i = i0_x + 1; i < NUM; i++) {
+                x[i] = x[i - 1] + step1_x_right * (1 + (i - (i0_x + 1)) * step_x_right);
             }
-        }
-    }
 
-    normalize_to_1();
-    printf("%.14lf\t	%.14lf\t	%.14lf\t	%.14le\t\n", E, E_kinetic, E_potential, max_grad_E);
-
-    while (max_grad_E > 1.e-10) {
-
-        for (i = 0; i < NUM; i++) {
-            for (j = 0; j < NUM; j++) {
-                for (k = M; k < NUM2; k++) {
-
-                    vel[i][j][k] = G * (vel[i][j][k] + grad_E[i][j][k] * dt);
-                    //уже учтено, что grad_E на самом деле (-1)*ГРАДИЕНТ
-
-                    psi[i][j][k] = psi[i][j][k] + vel[i][j][k] * dt;
-                }
+            x[i0_x - 1 ] = a / 2. - step1_x_left / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+            for (i = i0_x - 2; i >= 0; i--) {
+                x[i] = x[i + 1] - step1_x_left * (1 - (i - (i0_x - 2)) * step_x_left);
             }
-        }
 
-        calculate_E();
-        calculate_grad_E();
-
-        max_grad_E = grad_E[0][0][M];
-        for (i = 0; i < NUM; i++) {
-            for (j = 0; j < NUM; j++) {
-                for (k = M; k < NUM2; k++) {
-                    if (max_grad_E < fabs(grad_E[i][j][k]))
-                        max_grad_E = fabs(grad_E[i][j][k]);
-                }
+            //переменный шаг по y
+            y[0] = step1_y / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+            for (j = 1; j < NUM; j++) {
+                y[j] = y[j - 1] + step1_y * (1 + (j - 1) * step_y);
             }
-        }
 
-        if (count_steps == 100) {
-            normalize_to_1();
-            printf("%.14lf\t	%.14lf\t	%.14lf\t	%.14le\t\n",
-                   E, E_kinetic, E_potential, max_grad_E);
+            //постоянный шаг по z
+            z[NUM2 / 2] = c * step_z;
+            for (k = NUM2 / 2 + 1; k < NUM2; k++) {
+                z[k] = z[k - 1] + step_z;
+            }
+
+            z[NUM2 / 2 - 1] = -c * step_z;
+            for (k = NUM2 / 2 - 2; k >= M; k--) {
+                z[k] = z[k + 1] - step_z;
+            }
+            ////////////////////////////////////////////////////////////
+
+            printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left/2., step1_x_right/.2 , x[i0_x + 1], x[NUM - i0_x - 1], x[NUM - 1]);
+
+            prepare_functions();
+
             count_steps = 0;
+            count_prints = 1;
+
+            calculate_E();
+            calculate_grad_E();
+
+            printf("N	\tE		\tE_kinetic	\tE_potential	\tmax_grad_E\t\n");
+            printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential, max_grad_E);
+            count_prints++;
+
+            max_grad_E = grad_E[0][0][M];
+            for (i = 0; i < NUM; i++) {
+                for (j = 0; j < NUM; j++) {
+                    for (k = M; k < NUM2; k++) {
+                        if (max_grad_E < fabs(grad_E[i][j][k]))
+                            max_grad_E = fabs(grad_E[i][j][k]);
+                    }
+                }
+            }
+
+            normalize_to_1();
+            printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential, max_grad_E);
+            count_prints++;
+
+            while (max_grad_E > 1.e-10) {
+
+                for (i = 0; i < NUM; i++) {
+                    for (j = 0; j < NUM; j++) {
+                        for (k = M; k < NUM2; k++) {
+
+                            vel[i][j][k] = G * (vel[i][j][k] + grad_E[i][j][k] * dt);
+                            //уже учтено, что grad_E на самом деле (-1)*ГРАДИЕНТ
+
+                            psi[i][j][k] = psi[i][j][k] + vel[i][j][k] * dt;
+                        }
+                    }
+                }
+
+                calculate_E();
+                calculate_grad_E();
+
+                max_grad_E = grad_E[0][0][M];
+                for (i = 0; i < NUM; i++) {
+                    for (j = 0; j < NUM; j++) {
+                        for (k = M; k < NUM2; k++) {
+                            if (max_grad_E < fabs(grad_E[i][j][k]))
+                                max_grad_E = fabs(grad_E[i][j][k]);
+                        }
+                    }
+                }
+
+                if (count_steps == 100) {
+                    normalize_to_1();
+                    printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints,
+                           E, E_kinetic, E_potential, max_grad_E);
+                    count_prints++;
+                    count_steps = 0;
+                }
+                count_steps++;
+            }
+
+            printf("%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", E, E_kinetic, E_potential, max_grad_E);
+            normalize_to_1();
+            printf("%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", E, E_kinetic, E_potential, max_grad_E);
+
+            time_t tstop = time(NULL);
+            sec = tstop - tstart;
+            printf("spent_time = %lld\n\a", sec);
+
+
+            fprintf(f, "%.1f\t %.1f\t %.1f\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", L, z0, a, E, E_kinetic, E_potential, max_grad_E);
+
+            a -= 0.5;
         }
-        count_steps++;
+        z0 -= 0.5;
     }
-
-    printf("%.14lf\t	%.14lf\t	%.14lf\t	%.14le\t\n", E, E_kinetic, E_potential, max_grad_E);
-    normalize_to_1();
-    printf("%.14lf\t	%.14lf\t	%.14lf\t	%.14le\t\n", E, E_kinetic, E_potential, max_grad_E);
-
-    time_t tstop = time(NULL);
-    sec = tstop - tstart;
-    printf("spent_time = %lld\n\a", sec);
-
+    fclose(f);
     //getchar();
 
     return 0;
