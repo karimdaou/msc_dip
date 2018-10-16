@@ -58,7 +58,7 @@ void prepare_functions() {
     for (i = 0; i < NUM; i++) {
         for (j = 0; j < NUM; j++) {
             for (k = M; k < NUM2; k++) {
-                V[i][j][k] = - 1. / (sqrt((x[i] + a / 2.) * (x[i] + a / 2.) + y[j] * y[j] + z[k] * z[k])) - \
+                V[i][j][k] = -1. / (sqrt((x[i] + a / 2.) * (x[i] + a / 2.) + y[j] * y[j] + z[k] * z[k])) - \
                                 1. / (sqrt((x[i] - a / 2.) * (x[i] - a / 2.) + y[j] * y[j] + z[k] * z[k]));
 
                 psi[i][j][k] = exp(-sqrt(x[i] * x[i] + y[j] * y[j] + z[k] * z[k]));
@@ -158,51 +158,13 @@ void calculate_E() {
         }
     }
 
-    sum1 = sum1 / 8.;
-    sum2 = sum2 / 8.;
-    sum3 = sum3 / 8.;
-    sum4 = sum4 / 8.;
-
-    sum5 = sum5 / 8.;
-    sum6 = sum6 / 8.;
-    sum7 = sum7 / 8.;
-    sum8 = sum8 / 8.;
-
-    sum9 = sum9 / 8.;
-    sum10 = sum10 / 8.;
-    sum11 = sum11 / 8.;
-    sum12 = sum12 / 8.;
-
-    sum13 = sum13 / 8.;
-    sum14 = sum14 / 8.;
-    sum15 = sum15 / 8.;
-    sum16 = sum16 / 8.;
-    sum17 = sum17 / 8.;
-    sum18 = sum18 / 8.;
-    sum19 = sum19 / 8.;
-    sum20 = sum20 / 8.;
-
-    sum21 = L * sum21 / 8.;
-    sum22 = L * sum22 / 8.;
-    sum23 = L * sum23 / 8.;
-    sum24 = L * sum24 / 8.;
-
-    sum25 = sum25 / 8.;
-    sum26 = sum26 / 8.;
-    sum27 = sum27 / 8.;
-    sum28 = sum28 / 8.;
-    sum29 = sum29 / 8.;
-    sum30 = sum30 / 8.;
-    sum31 = sum31 / 8.;
-    sum32 = sum32 / 8.;
-
-    E_kinetic = sum1 + sum2 + sum3 + sum4 + sum5 + sum6 + sum7 + sum8 \
- + sum9 + sum10 + sum11 + sum12;
-    E_potential = sum13 + sum14 + sum15 + sum16 + sum17 + sum18 \
- + sum19 + sum20;
-    surface_term = sum21 + sum22 + sum23 + sum24;
+    E_kinetic = (sum1 + sum2 + sum3 + sum4 + sum5 + sum6 + sum7 + sum8 \
+ + sum9 + sum10 + sum11 + sum12) / 8.;
+    E_potential = (sum13 + sum14 + sum15 + sum16 + sum17 + sum18 \
+ + sum19 + sum20) / 8.;
+    surface_term = (sum21 + sum22 + sum23 + sum24) / 8.;
     numerator = E_kinetic + E_potential + surface_term;
-    denumerator = sum25 + sum26 + sum27 + sum28 + sum29 + sum30 + sum31 + sum32;
+    denumerator = (sum25 + sum26 + sum27 + sum28 + sum29 + sum30 + sum31 + sum32) / 8.;
 
     E = numerator / denumerator;
 
@@ -222,9 +184,6 @@ void clear_grad_E() {
 }
 
 void calculate_grad_E() {
-    double temp1, temp2, temp3, temp4, temp5, temp6, temp7, temp8, temp9, temp10,
-            temp11, temp12, temp13, temp14, temp15, temp16, temp17, temp18, temp19, temp20,
-            temp25, temp26, temp27, temp28, temp29, temp30, temp31, temp32;
     //производные слагаемых, входящих в числитель
     double d_v1, d_v2, d_v3, d_v4, d_v5, d_v6, d_v7, d_v8, d_v9, d_v10,
             d_v11, d_v12, d_v13, d_v14, d_v15, d_v16, d_v17, d_v18, d_v19, d_v20;
@@ -241,170 +200,270 @@ void calculate_grad_E() {
 
     for (i = 0; i < NUM - 1; i++) {
         for (j = 0; j < NUM - 1; j++) {
-            grad_E[i][j][M] -= L * psi[i][j][M] * dx[i] * dy[j] / (4. * denumerator);
-            grad_E[i + 1][j][M] -= L * psi[i + 1][j][M] * dx[i] * dy[j] / (4. * denumerator);
-            grad_E[i][j + 1][M] -= L * psi[i][j + 1][M] * dx[i] * dy[j] / (4. * denumerator);
-            grad_E[i + 1][j + 1][M] -= L * psi[i + 1][j + 1][M] * dx[i] * dy[j] / (4. * denumerator);
+            grad_E[i][j][M] -= L * psi[i][j][M] * dx[i] * dy[j];
+            grad_E[i + 1][j][M] -= L * psi[i + 1][j][M] * dx[i] * dy[j];
+            grad_E[i][j + 1][M] -= L * psi[i][j + 1][M] * dx[i] * dy[j];
+            grad_E[i + 1][j + 1][M] -= L * psi[i + 1][j + 1][M] * dx[i] * dy[j];
 
             for (k = M; k < NUM2 - 1; k++) {
 
                 //слагаемые, входящие в производную числителя функционала энергии
 
                 //КИНЕТИЧЕСКИЕ СЛАГАЕМЫЕ
-                temp1 = (psi[i + 1][j][k] - psi[i][j][k]) * dy[j] * dz[k] / dx[i] / 4.;
                 // += (i+1, j, k) // -= (i, j, k)
-                d_v1 = -temp1 / denumerator;    //помним, что записыываем (-1)*(градиент энергии)
-                grad_E[i + 1][j][k] += d_v1;
-                grad_E[i][j][k] -= d_v1;
+                d_v1 = (psi[i + 1][j][k] - psi[i][j][k]) * dy[j] * dz[k] / dx[i];;
+                //помним, что записыываем (-1)*(градиент энергии)
+                grad_E[i + 1][j][k] -= d_v1;
+                grad_E[i][j][k] += d_v1;
 
-                temp2 = (psi[i + 1][j + 1][k] - psi[i][j + 1][k]) * dy[j] * dz[k] / dx[i] / 4.;
                 // += (i+1, j+1, k) // -= (i, j+1, k)
-                d_v2 = -temp2 / denumerator;
-                grad_E[i + 1][j + 1][k] += d_v2;
-                grad_E[i][j + 1][k] -= d_v2;
+                d_v2 = (psi[i + 1][j + 1][k] - psi[i][j + 1][k]) * dy[j] * dz[k] / dx[i];
+                grad_E[i + 1][j + 1][k] -= d_v2;
+                grad_E[i][j + 1][k] += d_v2;
 
-                temp3 = (psi[i + 1][j][k + 1] - psi[i][j][k + 1]) * dy[j] * dz[k] / dx[i] / 4.;
                 // += (i+1, j, k+1) // -= (i, j, k+1)
-                d_v3 = -temp3 / denumerator;
-                grad_E[i + 1][j][k + 1] += d_v3;
-                grad_E[i][j][k + 1] -= d_v3;
+                d_v3 = (psi[i + 1][j][k + 1] - psi[i][j][k + 1]) * dy[j] * dz[k] / dx[i];
+                grad_E[i + 1][j][k + 1] -= d_v3;
+                grad_E[i][j][k + 1] += d_v3;
 
-                temp4 = (psi[i + 1][j + 1][k + 1] - psi[i][j + 1][k + 1]) * dy[j] * dz[k] / dx[i] / 4.;
                 // += (i+1, j+1, k+1) // -= (i, j+1, k+1)
-                d_v4 = -temp4 / denumerator;
-                grad_E[i + 1][j + 1][k + 1] += d_v4;
-                grad_E[i][j + 1][k + 1] -= d_v4;
+                d_v4 = (psi[i + 1][j + 1][k + 1] - psi[i][j + 1][k + 1]) * dy[j] * dz[k] / dx[i];
+                grad_E[i + 1][j + 1][k + 1] -= d_v4;
+                grad_E[i][j + 1][k + 1] += d_v4;
 ////////////////////////////////////////////////////////////////
-                temp5 = (psi[i][j + 1][k] - psi[i][j][k]) * dx[i] * dz[k] / dy[j] / 4.;
                 // += (i, j+1, k) // -= (i, j, k)
-                d_v5 = -temp5 / denumerator;
-                grad_E[i][j + 1][k] += d_v5;
-                grad_E[i][j][k] -= d_v5;
+                d_v5 = (psi[i][j + 1][k] - psi[i][j][k]) * dx[i] * dz[k] / dy[j];
+                grad_E[i][j + 1][k] -= d_v5;
+                grad_E[i][j][k] += d_v5;
 
-                temp6 = (psi[i + 1][j + 1][k] - psi[i + 1][j][k]) * dx[i] * dz[k] / dy[j] / 4.;
                 // += (i+1, j+1, k) // -= (i+1, j, k)
-                d_v6 = -temp6 / denumerator;
-                grad_E[i + 1][j + 1][k] += d_v6;
-                grad_E[i + 1][j][k] -= d_v6;
+                d_v6 = (psi[i + 1][j + 1][k] - psi[i + 1][j][k]) * dx[i] * dz[k] / dy[j];
+                grad_E[i + 1][j + 1][k] -= d_v6;
+                grad_E[i + 1][j][k] += d_v6;
 
-                temp7 = (psi[i][j + 1][k + 1] - psi[i][j][k + 1]) * dx[i] * dz[k] / dy[j] / 4.;
                 // += (i, j+1, k+1) // -= (i, j, k+1)
-                d_v7 = -temp7 / denumerator;
-                grad_E[i][j + 1][k + 1] += d_v7;
-                grad_E[i][j][k + 1] -= d_v7;
+                d_v7 = (psi[i][j + 1][k + 1] - psi[i][j][k + 1]) * dx[i] * dz[k] / dy[j];
+                grad_E[i][j + 1][k + 1] -= d_v7;
+                grad_E[i][j][k + 1] += d_v7;
 
-                temp8 = (psi[i + 1][j + 1][k + 1] - psi[i + 1][j][k + 1]) * dx[i] * dz[k] / dy[j] / 4.;
                 // += (i+1, j+1, k+1) // -= (i+1, j, k+1)
-                d_v8 = -temp8 / denumerator;
-                grad_E[i + 1][j + 1][k + 1] += d_v8;
-                grad_E[i + 1][j][k + 1] -= d_v8;
+                d_v8 = (psi[i + 1][j + 1][k + 1] - psi[i + 1][j][k + 1]) * dx[i] * dz[k] / dy[j];
+                grad_E[i + 1][j + 1][k + 1] -= d_v8;
+                grad_E[i + 1][j][k + 1] += d_v8;
 /////////////////////////////////////////////////////////////////
-                temp9 = (psi[i][j][k + 1] - psi[i][j][k]) * dx[i] * dy[j] / dz[k] / 4.;
                 // += (i, j, k+1) // -= (i, j, k)
-                d_v9 = -temp9 / denumerator;
-                grad_E[i][j][k + 1] += d_v9;
-                grad_E[i][j][k] -= d_v9;
+                d_v9 = (psi[i][j][k + 1] - psi[i][j][k]) * dx[i] * dy[j] / dz[k];
+                grad_E[i][j][k + 1] -= d_v9;
+                grad_E[i][j][k] += d_v9;
 
-                temp10 = (psi[i + 1][j][k + 1] - psi[i + 1][j][k]) * dx[i] * dy[j] / dz[k] / 4.;
                 // += (i+1, j, k+1) // -= (i+1, j, k)
-                d_v10 = -temp10 / denumerator;
-                grad_E[i + 1][j][k + 1] += d_v10;
-                grad_E[i + 1][j][k] -= d_v10;
+                d_v10 = (psi[i + 1][j][k + 1] - psi[i + 1][j][k]) * dx[i] * dy[j] / dz[k];
+                grad_E[i + 1][j][k + 1] -= d_v10;
+                grad_E[i + 1][j][k] += d_v10;
 
-                temp11 = (psi[i][j + 1][k + 1] - psi[i][j + 1][k]) * dx[i] * dy[j] / dz[k] / 4.;
                 // += (i, j+1, k+1) // -= (i, j+1, k)
-                d_v11 = -temp11 / denumerator;
-                grad_E[i][j + 1][k + 1] += d_v11;
-                grad_E[i][j + 1][k] -= d_v11;
+                d_v11 = (psi[i][j + 1][k + 1] - psi[i][j + 1][k]) * dx[i] * dy[j] / dz[k];
+                grad_E[i][j + 1][k + 1] -= d_v11;
+                grad_E[i][j + 1][k] += d_v11;
 
-                temp12 = (psi[i + 1][j + 1][k + 1] - psi[i + 1][j + 1][k]) * dx[i] * dy[j] / dz[k] / 4.;
                 // += (i+1, j+1, k+1) // -= (i+1, j+1, k)
-                d_v12 = -temp12 / denumerator;
-                grad_E[i + 1][j + 1][k + 1] += d_v12;
-                grad_E[i + 1][j + 1][k] -= d_v12;
+                d_v12 = (psi[i + 1][j + 1][k + 1] - psi[i + 1][j + 1][k]) * dx[i] * dy[j] / dz[k];
+                grad_E[i + 1][j + 1][k + 1] -= d_v12;
+                grad_E[i + 1][j + 1][k] += d_v12;
 ////////////////////////////////////////////////////////////////
                 //ПОТЕНЦИАЛЬНЫЕ СЛАГАЕМЫЕ
-                temp13 = V[i][j][k] * psi[i][j][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j, k)
-                d_v13 = -temp13 / denumerator;
-                grad_E[i][j][k] += d_v13;
+                d_v13 = V[i][j][k] * psi[i][j][k] * dx[i] * dy[j] * dz[k];
+                grad_E[i][j][k] -= d_v13;
 
-                temp14 = V[i + 1][j][k] * psi[i + 1][j][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j, k)
-                d_v14 = -temp14 / denumerator;
-                grad_E[i + 1][j][k] += d_v14;
+                d_v14 = V[i + 1][j][k] * psi[i + 1][j][k] * dx[i] * dy[j] * dz[k];
+                grad_E[i + 1][j][k] -= d_v14;
 
-                temp15 = V[i][j + 1][k] * psi[i][j + 1][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j+1, k)
-                d_v15 = -temp15 / denumerator;
-                grad_E[i][j + 1][k] += d_v15;
+                d_v15 = V[i][j + 1][k] * psi[i][j + 1][k] * dx[i] * dy[j] * dz[k];
+                grad_E[i][j + 1][k] -= d_v15;
 
-                temp16 = V[i][j][k + 1] * psi[i][j][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j, k+1)
-                d_v16 = -temp16 / denumerator;
-                grad_E[i][j][k + 1] += d_v16;
+                d_v16 = V[i][j][k + 1] * psi[i][j][k + 1] * dx[i] * dy[j] * dz[k];
+                grad_E[i][j][k + 1] -= d_v16;
 
-                temp17 = V[i + 1][j + 1][k] * psi[i + 1][j + 1][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j+1, k)
-                d_v17 = -temp17 / denumerator;
-                grad_E[i + 1][j + 1][k] += d_v17;
+                d_v17 = V[i + 1][j + 1][k] * psi[i + 1][j + 1][k] * dx[i] * dy[j] * dz[k];
+                grad_E[i + 1][j + 1][k] -= d_v17;
 
-                temp18 = V[i + 1][j][k + 1] * psi[i + 1][j][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j, k+1)
-                d_v18 = -temp18 / denumerator;
-                grad_E[i + 1][j][k + 1] += d_v18;
+                d_v18 = V[i + 1][j][k + 1] * psi[i + 1][j][k + 1] * dx[i] * dy[j] * dz[k];
+                grad_E[i + 1][j][k + 1] -= d_v18;
 
-                temp19 = V[i][j + 1][k + 1] * psi[i][j + 1][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j+1, k+1)
-                d_v19 = -temp19 / denumerator;
-                grad_E[i][j + 1][k + 1] += d_v19;
+                d_v19 = V[i][j + 1][k + 1] * psi[i][j + 1][k + 1] * dx[i] * dy[j] * dz[k];
+                grad_E[i][j + 1][k + 1] -= d_v19;
 
-                temp20 = V[i + 1][j + 1][k + 1] * psi[i + 1][j + 1][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j+1, k+1)
-                d_v20 = -temp20 / denumerator;
-                grad_E[i + 1][j + 1][k + 1] += d_v20;
+                d_v20 = V[i + 1][j + 1][k + 1] * psi[i + 1][j + 1][k + 1] * dx[i] * dy[j] * dz[k];
+                grad_E[i + 1][j + 1][k + 1] -= d_v20;
 ////////////////////////////////////////////////////////////////
                 //слагаемые, входящие в производную знаменателя функционала энергии
-                temp25 = psi[i][j][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j, k)
-                d_w1 = temp25 * numerator / denumerator;
+                d_w1 = psi[i][j][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i][j][k] += d_w1;
 
-                temp26 = psi[i + 1][j][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j, k)
-                d_w2 = temp26 * numerator / denumerator;
+                d_w2 = psi[i + 1][j][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i + 1][j][k] += d_w2;
 
-                temp27 = psi[i][j + 1][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j+1, k)
-                d_w3 = temp27 * numerator / denumerator;
+                d_w3 = psi[i][j + 1][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i][j + 1][k] += d_w3;
 
-                temp28 = psi[i][j][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j, k+1)
-                d_w4 = temp28 * numerator / denumerator;
+                d_w4 = psi[i][j][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i][j][k + 1] += d_w4;
 
-                temp29 = psi[i + 1][j + 1][k] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j+1, k)
-                d_w5 = temp29 * numerator / denumerator;
+                d_w5 = psi[i + 1][j + 1][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i + 1][j + 1][k] += d_w5;
 
-                temp30 = psi[i + 1][j][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j, k+1)
-                d_w6 = temp30 * numerator / denumerator;
+                d_w6 = psi[i + 1][j][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i + 1][j][k + 1] += d_w6;
 
-                temp31 = psi[i][j + 1][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i, j+1, k+1)
-                d_w7 = temp31 * numerator / denumerator;
+                d_w7 = psi[i][j + 1][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i][j + 1][k + 1] += d_w7;
 
-                temp32 = psi[i + 1][j + 1][k + 1] * dx[i] * dy[j] * dz[k] / 4.;
                 // += (i+1, j+1, k+1)
-                d_w8 = temp32 * numerator / denumerator;
+                d_w8 = psi[i + 1][j + 1][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
                 grad_E[i + 1][j + 1][k + 1] += d_w8;
 
+            }
+        }
+    }
+
+    //ОБРАБАТЫВАЕМ ГРАНИЦУ ( там, где "разрезали" полную задачу)
+    //ПРОИЗВОДНЫХ по x не будет, т.к. слагаемые взаимно сокращаются (=> =0),
+    // но все остальные слагаемые и члены нужно учесть
+
+
+    grad_E[0][0][M] -= L * psi[0][0][M] * dx[0] * dy[0];
+    grad_E[0][0][M] -= V[0][0][M] * psi[0][0][M] * dx[0] * dy[0] * dz[M];
+    grad_E[0][0][M] += psi[0][0][M] * dx[0] * dy[0] * dz[M] * numerator / denumerator;
+
+    i = 0;
+    for (j = 0; j < NUM - 1; j++) {
+        grad_E[i][j][M] -= L * psi[i][j][M] * dx[i] * dy[j];
+        grad_E[i][j + 1][M] -= L * psi[i][j + 1][M] * dx[i] * dy[j];
+    }
+
+    j = 0;
+    for (i = 0; i < NUM - 1; i++) {
+        grad_E[i][j][M] -= L * psi[i][j][M] * dx[i] * dy[j];
+        grad_E[i + 1][j][M] -= L * psi[i + 1][j][M] * dx[i] * dy[j];
+    }
+
+
+    i = 0;
+    for (j = 0; j < NUM - 1; j++) {
+        for (k = M; k < NUM2 - 1; k++) {
+
+            //слагаемые, входящие в производную числителя функционала энергии
+
+            //КИНЕТИЧЕСКИЕ СЛАГАЕМЫЕ = 0, т.к. разница psi = 0
+            //ПОТЕНЦИАЛЬНЫЕ СЛАГАЕМЫЕ
+            // нас будут интересовать только слагаемые с индексами i = 0,
+            // слагаемые с (i + 1) - выкидываем (их роль начинают исполнять слагаемые с (i) = 0)
+            // остальные индексы такие же как прежде
+
+            // += (i, j, k)
+            d_v13 = V[i][j][k] * psi[i][j][k] * dx[i] * dy[j] * dz[k];
+            grad_E[i][j][k] -= d_v13;
+
+            // += (i, j+1, k)
+            d_v15 = V[i][j + 1][k] * psi[i][j + 1][k] * dx[i] * dy[j] * dz[k];
+            grad_E[i][j + 1][k] -= d_v15;
+
+            // += (i, j, k+1)
+            d_v16 = V[i][j][k + 1] * psi[i][j][k + 1] * dx[i] * dy[j] * dz[k];
+            grad_E[i][j][k + 1] -= d_v16;
+
+            // += (i, j+1, k+1)
+            d_v19 = V[i][j + 1][k + 1] * psi[i][j + 1][k + 1] * dx[i] * dy[j] * dz[k];
+            grad_E[i][j + 1][k + 1] -= d_v19;
+
+////////////////////////////////////////////////////////////////
+            //слагаемые, входящие в производную знаменателя функционала энергии
+            // += (i, j, k)
+            d_w1 = psi[i][j][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i][j][k] += d_w1;
+
+            // += (i, j+1, k)
+            d_w3 = psi[i][j + 1][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i][j + 1][k] += d_w3;
+
+            // += (i, j, k+1)
+            d_w4 = psi[i][j][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i][j][k + 1] += d_w4;
+
+
+            // += (i, j+1, k+1)
+            d_w7 = psi[i][j + 1][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i][j + 1][k + 1] += d_w7;
+
+        }
+    }
+
+
+    j = 0;
+    for (i = 0; i < NUM - 1; i++) {
+        for (k = M; k < NUM2 - 1; k++) {
+
+            //слагаемые, входящие в производную числителя функционала энергии
+
+            //КИНЕТИЧЕСКИЕ СЛАГАЕМЫЕ = 0, т.к. разница psi = 0
+            //ПОТЕНЦИАЛЬНЫЕ СЛАГАЕМЫЕ
+            // нас будут интересовать только слагаемые с индексами (j) = 0
+            // т.е. слагаемые с (j+1) - выкидываем
+
+            // += (i+1, j, k)
+            d_v14 = V[i + 1][j][k] * psi[i + 1][j][k] * dx[i] * dy[j] * dz[k];
+            grad_E[i + 1][j][k] -= d_v14;
+
+            // += (i, j, k+1)
+            d_v16 = V[i][j][k + 1] * psi[i][j][k + 1] * dx[i] * dy[j] * dz[k];
+            grad_E[i][j][k + 1] -= d_v16;
+
+            // += (i+1, j, k+1)
+            d_v18 = V[i + 1][j][k + 1] * psi[i + 1][j][k + 1] * dx[i] * dy[j] * dz[k];
+            grad_E[i + 1][j][k + 1] -= d_v18;
+
+////////////////////////////////////////////////////////////////
+//слагаемые, входящие в производную знаменателя функционала энергии
+
+            // += (i, j, k)
+            d_w1 = psi[i][j][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i][j][k] += d_w1;
+
+            // += (i+1, j, k)
+            d_w2 = psi[i + 1][j][k] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i + 1][j][k] += d_w2;
+
+            // += (i, j, k+1)
+            d_w4 = psi[i][j][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i][j][k + 1] += d_w4;
+
+            // += (i+1, j, k+1)
+            d_w6 = psi[i + 1][j][k + 1] * dx[i] * dy[j] * dz[k] * numerator / denumerator;
+            grad_E[i + 1][j][k + 1] += d_w6;
+        }
+    }
+
+
+    for (i = 0; i < NUM; i++) {
+        for (j = 0; j < NUM; j++) {
+            for (k = M; k < NUM2; k++) {
+                grad_E[i][j][k] = grad_E[i][j][k] / 4. /
+                                  denumerator;
             }
         }
     }
@@ -435,18 +494,19 @@ int main() {
     //Инициализация параметров задачи и тело программы
     L = 0.;
     z0 = 10.;
-    while (z0 > step_z){
+    while (z0 > step_z) {
         a = 10.;
-        while (a >= 0.){
+        while (a >= 0.) {
 
             time_t tstart = time(NULL);
             //переменный шаг по x
-            x[i0_x ] = a / 2. + step1_x_right / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+            x[i0_x] = a / 2. + step1_x_right / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
             for (i = i0_x + 1; i < NUM; i++) {
                 x[i] = x[i - 1] + step1_x_right * (1 + (i - (i0_x + 1)) * step_x_right);
             }
 
-            x[i0_x - 1 ] = a / 2. - step1_x_left / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+            x[i0_x - 1] =
+                    a / 2. - step1_x_left / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
             for (i = i0_x - 2; i >= 0; i--) {
                 x[i] = x[i + 1] - step1_x_left * (1 - (i - (i0_x - 2)) * step_x_left);
             }
@@ -469,7 +529,8 @@ int main() {
             }
             ////////////////////////////////////////////////////////////
 
-            printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left/2., step1_x_right/.2 , x[i0_x + 1], x[NUM - i0_x - 1], x[NUM - 1]);
+            printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left / 2., step1_x_right / .2, x[i0_x + 1],
+                   x[NUM - i0_x - 1], x[NUM - 1]);
 
             prepare_functions();
 
@@ -480,7 +541,8 @@ int main() {
             calculate_grad_E();
 
             printf("N	\tE		\tE_kinetic	\tE_potential	\tmax_grad_E\t\n");
-            printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential, max_grad_E);
+            printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential,
+                   max_grad_E);
             count_prints++;
 
             max_grad_E = grad_E[0][0][M];
@@ -494,7 +556,8 @@ int main() {
             }
 
             normalize_to_1();
-            printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential, max_grad_E);
+            printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential,
+                   max_grad_E);
             count_prints++;
 
             while (max_grad_E > 1.e-10) {
@@ -543,7 +606,8 @@ int main() {
             printf("spent_time = %lld\n\a", sec);
 
 
-            fprintf(f, "%.1f\t %.1f\t %.1f\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", L, z0, a, E, E_kinetic, E_potential, max_grad_E);
+            fprintf(f, "%.1f\t %.1f\t %.1f\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", L, z0, a, E, E_kinetic,
+                    E_potential, max_grad_E);
 
             a -= 0.5;
         }
