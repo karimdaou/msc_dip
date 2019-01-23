@@ -61,7 +61,7 @@ void prepare_functions() {
                 V[i][j][k] = -1. / (sqrt((x[i] + a / 2.) * (x[i] + a / 2.) + y[j] * y[j] + z[k] * z[k])) - \
                                 1. / (sqrt((x[i] - a / 2.) * (x[i] - a / 2.) + y[j] * y[j] + z[k] * z[k]));
 
-                psi[i][j][k] = exp(-sqrt(x[i] * x[i] + y[j] * y[j] + z[k] * z[k]));
+                psi[i][j][k] = exp(-sqrt((x[i] -  a) * (x[i] - a) + y[j] * y[j] + z[k] * z[k]));
                 vel[i][j][k] = 0;
             }
 
