@@ -37,7 +37,7 @@
 #define step_y (H_var/(NUM - 2))
 #define step_z (H/(NUM-1+c))
 
-#define G 0.995
+//#define G 0.995
 #define dt 2.e-1
 
 //##### GLOBAL VARIABLES    #####
@@ -546,10 +546,41 @@ void normalize_to_1() {
     calculate_E();
 }
 
+//функция, считающая косинус между векторами
+double calc_G() {
+    int i, j, k;
+    double dot_ab, norm_a, norm_b, cos_ab, ans;
+    dot_ab = norm_a = norm_b = 0;
+
+    for (i = 0; i < NUM; i++) {
+        for (j = 0; j < NUM; j++) {
+            for (k = M; k < NUM2; k++) {
+                dot_ab += vel[i][j][k] * grad_E[i][j][k];
+                norm_a += vel[i][j][k] * vel[i][j][k];
+                norm_b += grad_E[i][j][k] * grad_E[i][j][k];
+            }
+        }
+    }
+
+    norm_a = sqrt(norm_a);
+    norm_b = sqrt(norm_b);
+
+    if (norm_a * norm_b == 0) {
+        cos_ab = 0;
+    }
+    else {
+        cos_ab = dot_ab / (norm_a * norm_b);
+    }
+    ans = (1. + 0.1 * tanh((cos_ab - 0.5) * 2.) - 0.1 * tanh((1. - 0.5) * 2.));
+
+   return ans;
+}
+
 int main() {
     int i, j, k, count_steps, count_prints;
     time_t sec;
-    double F, v;
+    double G;
+    //double F, v;
 
     FILE *f;
     f = fopen(OUTFILE, "w");
@@ -603,6 +634,7 @@ int main() {
 
             calculate_E();
             calculate_grad_E();
+            G = calc_G();
 
             printf("N	\tE		\tE_kinetic	\tE_potential	\tmax_grad_E\t\n");
             printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints, E, E_kinetic, E_potential,
@@ -640,6 +672,8 @@ int main() {
 
                 calculate_E();
                 calculate_grad_E();
+                G = calc_G();
+
 
                 max_grad_E = grad_E[0][0][M];
                 for (i = 0; i < NUM; i++) {
