@@ -168,8 +168,6 @@ void calculate_E() {
 
     E = numerator / denumerator;
 
-    //printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n",\
-//     sum1, sum5, sum9, sum13, sum21, sum25, numerator, denumerator, E);
 }
 
 void clear_grad_E() {
@@ -419,11 +417,22 @@ int main() {
                 x[i] = x[i - 1] + step1_x_right * (1 + (i - (i0_x + 1)) * step_x_right);
             }
 
-            x[i0_x - 1] =
-                    a / 2. - step1_x_left / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
-            for (i = i0_x - 2; i >= 0; i--) {
-                x[i] = x[i + 1] - step1_x_left * (1 - (i - (i0_x - 2)) * step_x_left);
+            if (i0_x > 2) {
+                x[i0_x - 1] =
+                        a / 2. - step1_x_left / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+                for (i = i0_x - 2; i >= 0; i--) {
+                    x[i] = x[i + 1] - step1_x_left * (1 - (i - (i0_x - 2)) * step_x_left);
+                }
             }
+            else if (i0_x > 0) { //т.е. здесь обрабатывается максимум две точки
+                x[i0_x - 1] = a / 2. - (a / 2.) / (i0_x) / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
+                for (i = i0_x - 2; i >= 0; i--) {
+                    x[i] = x[i + 1] - (a / 2.) / (i0_x);
+                }
+
+            }
+
+
 
             //переменный шаг по y
             y[0] = step1_y / 2.;   //делим пополам, чтобы наши точки были тождественны узлам решетки
@@ -442,9 +451,16 @@ int main() {
                 z[k] = z[k + 1] - step_z;
             }
             ////////////////////////////////////////////////////////////
-
-            printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left / 2., step1_x_right / .2, x[i0_x + 1],
-                   x[NUM - i0_x - 1], x[NUM - 1]);
+            if(i0_x > 2) {
+                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left / 2., step1_x_right / .2,
+                       x[i0_x + 1],
+                       x[NUM - i0_x - 1], x[NUM - 1]);
+            }
+            else{
+                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], (a / 2.) / (i0_x) / 2., step1_x_right / .2,
+                       x[i0_x + 1],
+                       x[NUM - i0_x - 1], x[NUM - 1]);
+            }
 
             prepare_functions();
 
@@ -506,7 +522,7 @@ int main() {
                 }
 
                 if (count_steps == 100) {
-                    normalize_to_1();
+                    //normalize_to_1();
                     printf("%d\t	%.12lf\t	%.12lf\t	%.12lf\t	%.12le\t\n", count_prints,
                            E, E_kinetic, E_potential, max_grad_E);
                     count_prints++;
