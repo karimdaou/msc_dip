@@ -452,13 +452,17 @@ int main() {
             }
             ////////////////////////////////////////////////////////////
             if(i0_x > 2) {
-                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left / 2., step1_x_right / .2,
+                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_left / 2., step1_x_right / 2.,
+                       x[i0_x + 1],
+                       x[NUM - i0_x - 1], x[NUM - 1]);
+            }
+            else if (i0_x > 0){
+                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], (a / 2.) / (i0_x) / 2., step1_x_right / 2.,
                        x[i0_x + 1],
                        x[NUM - i0_x - 1], x[NUM - 1]);
             }
             else{
-                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], (a / 2.) / (i0_x) / 2., step1_x_right / .2,
-                       x[i0_x + 1],
+                printf("%lf\t %lf\t %lf\t %lf\t %lf\t %lf\t\n", x[0], step1_x_right / 2., x[i0_x + 1],
                        x[NUM - i0_x - 1], x[NUM - 1]);
             }
 
