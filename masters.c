@@ -424,6 +424,9 @@ void calculate_grad_E() {
     }
 
 
+
+    // Обработка градиентов точек у границы "разреза" задачи
+
     i = 0;
     for (j = 0; j < NUM - 1; j++) {
         grad_E[i][j][M] -= L * psi[i][j][M] * dx[i] * dy[j];
